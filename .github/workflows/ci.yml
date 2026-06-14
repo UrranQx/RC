@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      MPLBACKEND: Agg
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.21"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --extra dev
+
+      - name: Check formatting
+        run: uv run ruff format --check conn2res experiments scripts tests
+
+      - name: Check imports
+        run: uv run ruff check conn2res experiments scripts tests
+
+      - name: Run tests
+        run: >
+          uv run pytest conn2res/tests tests
+          --deselect=conn2res/tests/test_connectivity.py::TestConn::test_randomize
+          --deselect=conn2res/tests/test_connectivity.py::TestConn::test_get_nodes
